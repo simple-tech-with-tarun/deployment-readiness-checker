@@ -9,6 +9,9 @@ description = "A Python CLI application for validating deployment readiness."
 requires-python = ">=3.10"
 dependencies = []
 
+[project.scripts]
+deployment-readiness-checker = "deployment_readiness_checker.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest",
