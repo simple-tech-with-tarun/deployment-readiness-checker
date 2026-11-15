@@ -19,7 +19,11 @@ def evaluate_readiness(config: DeploymentConfig) -> ReadinessResult:
             f"{config.environment.capitalize()} deployments require at least "
             f"{policy.minimum_replicas} replicas."
         )
-
+    if config.replicas > policy.maximum_replicas:
+        findings.append(
+            f"{config.environment.capitalize()} deployments allow at most "
+            f"{policy.maximum_replicas} replicas."
+        )
     if policy.reject_latest_image and config.image.endswith(":latest"):
         findings.append(
             "Container image must use a specific version tag, not 'latest'."

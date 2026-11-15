@@ -30,12 +30,26 @@ def test_environment_policies_define_minimum_replicas(environment, minimum_repli
     assert policy.minimum_replicas == minimum_replicas
 
 
+@pytest.mark.parametrize(
+    ("environment", "maximum_replicas"),
+    [
+        ("development", 3),
+        ("staging", 10),
+        ("production", 100),
+    ],
+)
+def test_environment_policies_define_maximum_replicas(environment, maximum_replicas):
+    policy = ENVIRONMENT_POLICIES[environment]
+
+    assert policy.maximum_replicas == maximum_replicas
+
+
 def test_environment_policies_reject_latest_images():
     assert all(policy.reject_latest_image for policy in ENVIRONMENT_POLICIES.values())
 
 
 def test_environment_policy_is_immutable():
-    policy = EnvironmentPolicy(minimum_replicas=2)
+    policy = EnvironmentPolicy(minimum_replicas=2, maximum_replicas=100)
 
     with pytest.raises(FrozenInstanceError):
         policy.minimum_replicas = 3
