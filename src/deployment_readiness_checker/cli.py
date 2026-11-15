@@ -1,33 +1,36 @@
 import argparse
+import sys
 from collections.abc import Sequence
 
+from deployment_readiness_checker.config_loader import load_config
 from deployment_readiness_checker.models import DeploymentConfig
+from deployment_readiness_checker.readiness import evaluate_readiness
 
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="deployment-readiness-checker",
-        description="Validate deployment configuration.",
+        description="Evaluate deployment readiness.",
     )
 
     parser.add_argument(
+        "--config",
+        help="Path to a JSON deployment configuration file.",
+    )
+    parser.add_argument(
         "--service",
-        required=True,
         help="Name of the service.",
     )
     parser.add_argument(
         "--environment",
-        required=True,
         help="Deployment environment.",
     )
     parser.add_argument(
         "--image",
-        required=True,
         help="Container image.",
     )
     parser.add_argument(
         "--replicas",
-        required=True,
         type=int,
         help="Number of replicas.",
     )
@@ -40,18 +43,60 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        config = DeploymentConfig(
-            service_name=args.service,
-            environment=args.environment,
-            image=args.image,
-            replicas=args.replicas,
+        if args.config:
+            if any(
+                value is not None
+                for value in (
+                    args.service,
+                    args.environment,
+                    args.image,
+                    args.replicas,
+                )
+            ):
+                parser.error("--config cannot be combined with individual arguments.")
+
+            config = load_config(args.config)
+
+        else:
+            if any(
+                value is None
+                for value in (
+                    args.service,
+                    args.environment,
+                    args.image,
+                    args.replicas,
+                )
+            ):
+                parser.error(
+                    "Provide either --config or all four deployment arguments."
+                )
+
+            config = DeploymentConfig(
+                service_name=args.service,
+                environment=args.environment,
+                image=args.image,
+                replicas=args.replicas,
+            )
+
+        result = evaluate_readiness(config)
+
+    except (OSError, ValueError, TypeError) as error:
+        print(f"Configuration error: {error}", file=sys.stderr)
+        return 1
+
+    if result.is_ready:
+        print(
+            f"Deployment '{config.service_name}' is READY "
+            f"for the '{config.environment}' environment."
         )
-    except ValueError as error:
-        parser.error(str(error))
+        return 0
 
     print(
-        f"Deployment configuration for '{config.service_name}' "
-        f"is valid in the '{config.environment}' environment."
+        f"Deployment '{config.service_name}' is NOT READY "
+        f"for the '{config.environment}' environment."
     )
 
-    return 0
+    for finding in result.findings:
+        print(f"- {finding}")
+
+    return 1
