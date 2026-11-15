@@ -91,3 +91,52 @@ def test_evaluate_readiness_reports_multiple_findings():
         "Production deployments require at least 2 replicas.",
         "Container image must use a specific version tag, not 'latest'.",
     ]
+
+
+def test_evaluate_readiness_accepts_development_with_one_replica():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="development",
+        image="payment-api:1.0.0",
+        replicas=1,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config)
+
+    assert result.is_ready is True
+    assert result.findings == []
+
+
+def test_evaluate_readiness_rejects_latest_image_in_development():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="development",
+        image="payment-api:latest",
+        replicas=1,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config)
+
+    assert result.is_ready is False
+    assert result.findings == [
+        "Container image must use a specific version tag, not 'latest'."
+    ]
+
+
+def test_evaluate_readiness_rejects_staging_with_latest_image():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="staging",
+        image="payment-api:latest",
+        replicas=1,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config)
+
+    assert result.is_ready is False
+    assert result.findings == [
+        "Container image must use a specific version tag, not 'latest'."
+    ]

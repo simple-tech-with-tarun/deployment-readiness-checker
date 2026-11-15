@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from deployment_readiness_checker.models import DeploymentConfig
+from deployment_readiness_checker.policies import ENVIRONMENT_POLICIES
 
 
 @dataclass
@@ -11,11 +12,15 @@ class ReadinessResult:
 
 def evaluate_readiness(config: DeploymentConfig) -> ReadinessResult:
     findings = []
+    policy = ENVIRONMENT_POLICIES[config.environment]
 
-    if config.environment == "production" and config.replicas < 2:
-        findings.append("Production deployments require at least 2 replicas.")
+    if config.replicas < policy.minimum_replicas:
+        findings.append(
+            f"{config.environment.capitalize()} deployments require at least "
+            f"{policy.minimum_replicas} replicas."
+        )
 
-    if config.image.endswith(":latest"):
+    if policy.reject_latest_image and config.image.endswith(":latest"):
         findings.append(
             "Container image must use a specific version tag, not 'latest'."
         )
