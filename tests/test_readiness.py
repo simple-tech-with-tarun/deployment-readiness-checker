@@ -1,5 +1,16 @@
-from deployment_readiness_checker.models import DeploymentConfig
+from deployment_readiness_checker.models import (
+    DeploymentConfig,
+    ResourceRequirements,
+    ResourceValues,
+)
 from deployment_readiness_checker.readiness import evaluate_readiness
+
+
+def create_resources():
+    return ResourceRequirements(
+        requests=ResourceValues(cpu="250m", memory="256Mi"),
+        limits=ResourceValues(cpu="1000m", memory="512Mi"),
+    )
 
 
 def test_evaluate_readiness_accepts_ready_production_config():
@@ -8,6 +19,7 @@ def test_evaluate_readiness_accepts_ready_production_config():
         environment="production",
         image="payment-api:1.0.0",
         replicas=3,
+        resources=create_resources(),
     )
 
     result = evaluate_readiness(config)
@@ -22,6 +34,7 @@ def test_evaluate_readiness_rejects_production_with_one_replica():
         environment="production",
         image="payment-api:1.0.0",
         replicas=1,
+        resources=create_resources(),
     )
 
     result = evaluate_readiness(config)
@@ -36,6 +49,7 @@ def test_evaluate_readiness_accepts_staging_with_one_replica():
         environment="staging",
         image="payment-api:1.0.0",
         replicas=1,
+        resources=create_resources(),
     )
 
     result = evaluate_readiness(config)
@@ -50,6 +64,7 @@ def test_evaluate_readiness_rejects_latest_image_tag():
         environment="staging",
         image="payment-api:latest",
         replicas=2,
+        resources=create_resources(),
     )
 
     result = evaluate_readiness(config)
@@ -66,6 +81,7 @@ def test_evaluate_readiness_reports_multiple_findings():
         environment="production",
         image="payment-api:latest",
         replicas=1,
+        resources=create_resources(),
     )
 
     result = evaluate_readiness(config)

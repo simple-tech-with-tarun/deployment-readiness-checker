@@ -3,19 +3,29 @@ import pytest
 from deployment_readiness_checker.cli import main
 
 
+def create_cli_arguments():
+    return [
+        "--service",
+        "payment-api",
+        "--environment",
+        "production",
+        "--image",
+        "payment-api:1.0.0",
+        "--replicas",
+        "3",
+        "--cpu-request",
+        "250m",
+        "--memory-request",
+        "256Mi",
+        "--cpu-limit",
+        "1000m",
+        "--memory-limit",
+        "512Mi",
+    ]
+
+
 def test_cli_accepts_ready_configuration(capsys):
-    result = main(
-        [
-            "--service",
-            "payment-api",
-            "--environment",
-            "production",
-            "--image",
-            "payment-api:1.0.0",
-            "--replicas",
-            "3",
-        ]
-    )
+    result = main(create_cli_arguments())
 
     captured = capsys.readouterr()
 
@@ -26,18 +36,10 @@ def test_cli_accepts_ready_configuration(capsys):
 
 
 def test_cli_rejects_unready_configuration(capsys):
-    result = main(
-        [
-            "--service",
-            "payment-api",
-            "--environment",
-            "production",
-            "--image",
-            "payment-api:1.0.0",
-            "--replicas",
-            "1",
-        ]
-    )
+    arguments = create_cli_arguments()
+    arguments[arguments.index("--replicas") + 1] = "1"
+
+    result = main(arguments)
 
     captured = capsys.readouterr()
 
@@ -54,7 +56,17 @@ def test_cli_accepts_ready_json_configuration(tmp_path, capsys):
             "service_name": "payment-api",
             "environment": "production",
             "image": "payment-api:1.0.0",
-            "replicas": 3
+            "replicas": 3,
+            "resources": {
+                "requests": {
+                    "cpu": "250m",
+                    "memory": "256Mi"
+                },
+                "limits": {
+                    "cpu": "1000m",
+                    "memory": "512Mi"
+                }
+            }
         }
         """,
         encoding="utf-8",
@@ -69,18 +81,11 @@ def test_cli_accepts_ready_json_configuration(tmp_path, capsys):
 
 
 def test_cli_rejects_invalid_configuration(capsys):
-    result = main(
-        [
-            "--service",
-            "payment-api",
-            "--environment",
-            "production",
-            "--image",
-            "payment-api:latest",
-            "--replicas",
-            "1",
-        ]
-    )
+    arguments = create_cli_arguments()
+    arguments[arguments.index("--image") + 1] = "payment-api:latest"
+    arguments[arguments.index("--replicas") + 1] = "1"
+
+    result = main(arguments)
 
     captured = capsys.readouterr()
 
@@ -93,63 +98,29 @@ def test_cli_rejects_invalid_configuration(capsys):
 
 
 @pytest.mark.parametrize(
-    ("arguments", "error"),
+    ("argument", "value", "error"),
     [
+        ("--service", " ", "Service name cannot be empty."),
+        ("--environment", "testing", "Unsupported environment: testing"),
+        ("--image", "", "Container image cannot be empty."),
+        ("--replicas", "0", "Replica count must be greater than zero."),
+        ("--cpu-request", "invalid", "Invalid CPU resource value"),
         (
-            [
-                "--service",
-                " ",
-                "--environment",
-                "production",
-                "--image",
-                "payment-api:1.0.0",
-                "--replicas",
-                "3",
-            ],
-            "Service name cannot be empty.",
+            "--cpu-limit",
+            "100m",
+            "CPU limit cannot be lower than CPU request.",
         ),
         (
-            [
-                "--service",
-                "payment-api",
-                "--environment",
-                "testing",
-                "--image",
-                "payment-api:1.0.0",
-                "--replicas",
-                "3",
-            ],
-            "Unsupported environment: testing",
-        ),
-        (
-            [
-                "--service",
-                "payment-api",
-                "--environment",
-                "production",
-                "--image",
-                "",
-                "--replicas",
-                "3",
-            ],
-            "Container image cannot be empty.",
-        ),
-        (
-            [
-                "--service",
-                "payment-api",
-                "--environment",
-                "production",
-                "--image",
-                "payment-api:1.0.0",
-                "--replicas",
-                "0",
-            ],
-            "Replica count must be greater than zero.",
+            "--memory-limit",
+            "128Mi",
+            "Memory limit cannot be lower than memory request.",
         ),
     ],
 )
-def test_cli_handles_invalid_configuration(arguments, error, capsys):
+def test_cli_handles_invalid_configuration(argument, value, error, capsys):
+    arguments = create_cli_arguments()
+    arguments[arguments.index(argument) + 1] = value
+
     result = main(arguments)
 
     captured = capsys.readouterr()
