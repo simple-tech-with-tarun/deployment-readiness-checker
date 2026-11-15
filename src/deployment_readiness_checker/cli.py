@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 from collections.abc import Sequence
 
@@ -9,6 +10,7 @@ from deployment_readiness_checker.models import (
     ResourceValues,
 )
 from deployment_readiness_checker.readiness import evaluate_readiness
+from deployment_readiness_checker.reporting import create_readiness_report
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -53,6 +55,12 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--memory-limit",
         help="Maximum memory resources (e.g. 512Mi).",
+    )
+    parser.add_argument(
+        "--output",
+        choices=("text", "json"),
+        default="text",
+        help="Output format (text or json).",
     )
 
     return parser
@@ -110,6 +118,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (OSError, ValueError, TypeError) as error:
         print(f"Configuration error: {error}", file=sys.stderr)
         return 1
+
+    if args.output == "json":
+        report = create_readiness_report(config, result)
+        print(json.dumps(report, indent=2))
+        return 0 if result.is_ready else 1
 
     if result.is_ready:
         print(

@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from deployment_readiness_checker.cli import main
@@ -148,3 +150,38 @@ def test_cli_rejects_combined_input_modes():
         )
 
     assert exc_info.value.code == 2
+
+
+def test_cli_outputs_ready_deployment_as_json(capsys):
+    arguments = create_cli_arguments() + ["--output", "json"]
+
+    result = main(arguments)
+
+    captured = capsys.readouterr()
+    report = json.loads(captured.out)
+
+    assert result == 0
+    assert report["deployment"]["service_name"] == "payment-api"
+    assert report["deployment"]["environment"] == "production"
+    assert report["readiness"]["status"] == "READY"
+    assert report["readiness"]["is_ready"] is True
+    assert report["readiness"]["findings"] == []
+
+
+def test_cli_outputs_unready_deployment_as_json(capsys):
+    arguments = create_cli_arguments()
+    arguments[arguments.index("--replicas") + 1] = "1"
+    arguments.extend(["--output", "json"])
+
+    result = main(arguments)
+
+    captured = capsys.readouterr()
+    report = json.loads(captured.out)
+
+    assert result == 1
+    assert report["readiness"]["status"] == "NOT_READY"
+    assert report["readiness"]["is_ready"] is False
+    assert (
+        "Production deployments require at least 2 replicas."
+        in (report["readiness"]["findings"])
+    )
