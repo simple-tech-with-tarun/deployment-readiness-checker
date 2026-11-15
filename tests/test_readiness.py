@@ -140,3 +140,48 @@ def test_evaluate_readiness_rejects_staging_with_latest_image():
     assert result.findings == [
         "Container image must use a specific version tag, not 'latest'."
     ]
+
+
+def test_evaluate_readiness_rejects_development_above_maximum_replicas():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="development",
+        image="payment-api:1.0.0",
+        replicas=4,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config)
+
+    assert result.is_ready is False
+    assert result.findings == ["Development deployments allow at most 3 replicas."]
+
+
+def test_evaluate_readiness_rejects_staging_above_maximum_replicas():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="staging",
+        image="payment-api:1.0.0",
+        replicas=11,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config)
+
+    assert result.is_ready is False
+    assert result.findings == ["Staging deployments allow at most 10 replicas."]
+
+
+def test_evaluate_readiness_rejects_production_above_maximum_replicas():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:1.0.0",
+        replicas=101,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config)
+
+    assert result.is_ready is False
+    assert result.findings == ["Production deployments allow at most 100 replicas."]
