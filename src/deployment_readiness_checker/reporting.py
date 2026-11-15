@@ -29,3 +29,28 @@ def create_readiness_report(
             "findings": result.findings,
         },
     }
+
+
+def create_text_readiness_report(
+    config: DeploymentConfig,
+    result: ReadinessResult,
+) -> str:
+    status = "READY" if result.is_ready else "NOT_READY"
+
+    findings = (
+        "\n".join(f"- {finding}" for finding in result.findings)
+        if result.findings
+        else "- None"
+    )
+
+    return (
+        "Deployment Readiness Report\n"
+        "===========================\n"
+        f"Service: {config.service_name}\n"
+        f"Environment: {config.environment}\n"
+        f"Image: {config.image}\n"
+        f"Replicas: {config.replicas}\n"
+        f"Status: {status}\n"
+        "Findings:\n"
+        f"{findings}"
+    )
