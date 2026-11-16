@@ -19,6 +19,6 @@ ENVIRONMENT_POLICIES = {
     ),
     "production": EnvironmentPolicy(
         minimum_replicas=2,
-        maximum_replicas=1,
+        maximum_replicas=100,
     ),
 }
