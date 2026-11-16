@@ -185,3 +185,92 @@ def test_evaluate_readiness_rejects_production_above_maximum_replicas():
 
     assert result.is_ready is False
     assert result.findings == ["Production deployments are limited to 100 replicas."]
+
+
+def test_scoring_is_disabled_by_default():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:1.0.0",
+        replicas=3,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config)
+
+    assert result.score is None
+
+
+def test_scoring_returns_100_for_ready_config():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:1.0.0",
+        replicas=3,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config, enable_scoring=True)
+
+    assert result.score == 100
+    assert result.is_ready is True
+
+
+def test_scoring_deducts_30_for_minimum_replica_violation():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:1.0.0",
+        replicas=1,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config, enable_scoring=True)
+
+    assert result.score == 70
+    assert result.is_ready is False
+
+
+def test_scoring_deducts_20_for_maximum_replica_violation():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="development",
+        image="payment-api:1.0.0",
+        replicas=4,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config, enable_scoring=True)
+
+    assert result.score == 80
+    assert result.is_ready is False
+
+
+def test_scoring_deducts_25_for_latest_image():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="staging",
+        image="payment-api:latest",
+        replicas=2,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config, enable_scoring=True)
+
+    assert result.score == 75
+    assert result.is_ready is False
+
+
+def test_scoring_applies_multiple_deductions():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:latest",
+        replicas=1,
+        resources=create_resources(),
+    )
+
+    result = evaluate_readiness(config, enable_scoring=True)
+
+    assert result.score == 45
+    assert result.is_ready is False
