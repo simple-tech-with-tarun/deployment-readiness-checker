@@ -21,7 +21,7 @@ def evaluate_readiness(config: DeploymentConfig) -> ReadinessResult:
         )
     if config.replicas > policy.maximum_replicas:
         findings.append(
-            f"{config.environment.capitalize()} deployments allow at most "
+            f"{config.environment.capitalize()} deployments are limited to "
             f"{policy.maximum_replicas} replicas."
         )
     if policy.reject_latest_image and config.image.endswith(":latest"):
