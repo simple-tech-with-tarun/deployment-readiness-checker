@@ -28,6 +28,6 @@ jobs:
 
       - name: Run test
         run : |
-          python -m pytest -v
           python -m ruff format --check .
           python -m ruff check .
+          python -m pytest -v
