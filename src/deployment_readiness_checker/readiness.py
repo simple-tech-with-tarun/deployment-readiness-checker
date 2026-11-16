@@ -47,3 +47,8 @@ def evaluate_readiness(
         findings=findings,
         score=score,
     )
+
+
+def is_release_ready(config: DeploymentConfig) -> bool:
+    result = evaluate_readiness(config)
+    return result.is_ready
