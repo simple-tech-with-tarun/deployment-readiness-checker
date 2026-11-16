@@ -16,6 +16,7 @@ def evaluate_readiness(
     enable_scoring: bool = False,
 ) -> ReadinessResult:
     findings = []
+    score = 100 if enable_scoring else None
     policy = ENVIRONMENT_POLICIES[config.environment]
 
     if config.replicas < policy.minimum_replicas:
@@ -23,17 +24,26 @@ def evaluate_readiness(
             f"{config.environment.capitalize()} deployments require at least "
             f"{policy.minimum_replicas} replicas."
         )
+        if score is not None:
+            score -= 30
     if config.replicas > policy.maximum_replicas:
         findings.append(
             f"{config.environment.capitalize()} deployments are limited to "
             f"{policy.maximum_replicas} replicas."
         )
+        if score is not None:
+            score -= 20
     if policy.reject_latest_image and config.image.endswith(":latest"):
         findings.append(
             "Container image must use a specific version tag, not 'latest'."
         )
+        if score is not None:
+            score -= 25
 
+    if score is not None:
+        score = max(0, score)
     return ReadinessResult(
         is_ready=not findings,
         findings=findings,
+        score=score,
     )
