@@ -62,6 +62,12 @@ def create_parser() -> argparse.ArgumentParser:
         default="text",
         help="Output format (text or json).",
     )
+    parser.add_argument(
+        "--experimental-insights",
+        action="store_true",
+        default=False,
+        help="Enable experimental deployment insights.",
+    )
 
     return parser
 
