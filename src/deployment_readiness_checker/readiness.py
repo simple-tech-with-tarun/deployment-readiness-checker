@@ -8,9 +8,13 @@ from deployment_readiness_checker.policies import ENVIRONMENT_POLICIES
 class ReadinessResult:
     is_ready: bool
     findings: list[str]
+    score: int | None = None
 
 
-def evaluate_readiness(config: DeploymentConfig) -> ReadinessResult:
+def evaluate_readiness(
+    config: DeploymentConfig,
+    enable_scoring: bool = False,
+) -> ReadinessResult:
     findings = []
     policy = ENVIRONMENT_POLICIES[config.environment]
 
