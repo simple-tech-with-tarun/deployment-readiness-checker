@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from deployment_readiness_checker.cli import main
+from deployment_readiness_checker.cli import create_parser, main
 
 
 def create_cli_arguments():
@@ -185,3 +185,29 @@ def test_cli_outputs_unready_deployment_as_json(capsys):
         "Production deployments require at least 2 replicas."
         in (report["readiness"]["findings"])
     )
+
+
+def test_experimental_insights_flag_is_disabled_by_default(capsys):
+    arguments = create_cli_arguments()
+
+    result = main(arguments)
+
+    captured = capsys.readouterr()
+
+    assert result == 0
+    assert "Deployment 'payment-api' is READY" in captured.out
+    assert "Experimental insights:" not in captured.out
+
+
+def test_experimental_insights_flag_defaults_to_disabled():
+    args = create_parser().parse_args(create_cli_arguments())
+
+    assert args.experimental_insights is False
+
+
+def test_experimental_insights_flag_can_be_enabled():
+    arguments = create_cli_arguments() + ["--experimental-insights"]
+
+    args = create_parser().parse_args(arguments)
+
+    assert args.experimental_insights is True
