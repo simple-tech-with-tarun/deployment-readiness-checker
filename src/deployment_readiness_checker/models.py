@@ -88,6 +88,7 @@ class DeploymentConfig:
     image: str
     replicas: int
     resources: ResourceRequirements
+    owner: str | None = None
 
     def __post_init__(self) -> None:
         if not self.service_name.strip():
@@ -104,3 +105,7 @@ class DeploymentConfig:
 
         if not isinstance(self.resources, ResourceRequirements):
             raise ValueError("Deployment resources are required.")
+
+        if self.owner is not None:
+            if not isinstance(self.owner, str) or not self.owner.strip():
+                raise ValueError("Deployment owner must be a non-empty string.")

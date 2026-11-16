@@ -141,3 +141,44 @@ def test_resource_requirements_accepts_equal_requests_and_limits():
 
     assert resources.requests.cpu == "500m"
     assert resources.limits.cpu == "0.5"
+
+
+def test_deployment_config_owner_defaults_to_none():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:1.0.0",
+        replicas=3,
+        resources=create_resources(),
+    )
+
+    assert config.owner is None
+
+
+def test_deployment_config_accepts_owner():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:1.0.0",
+        replicas=3,
+        resources=create_resources(),
+        owner="payments-team",
+    )
+
+    assert config.owner == "payments-team"
+
+
+@pytest.mark.parametrize("owner", ["", " ", 123])
+def test_deployment_config_rejects_invalid_owner(owner):
+    with pytest.raises(
+        ValueError,
+        match="Deployment owner must be a non-empty string.",
+    ):
+        DeploymentConfig(
+            service_name="payment-api",
+            environment="production",
+            image="payment-api:1.0.0",
+            replicas=3,
+            resources=create_resources(),
+            owner=owner,
+        )
