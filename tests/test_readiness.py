@@ -3,7 +3,10 @@ from deployment_readiness_checker.models import (
     ResourceRequirements,
     ResourceValues,
 )
-from deployment_readiness_checker.readiness import evaluate_readiness
+from deployment_readiness_checker.readiness import (
+    evaluate_readiness,
+    is_release_ready,
+)
 
 
 def create_resources():
@@ -274,3 +277,27 @@ def test_scoring_applies_multiple_deductions():
 
     assert result.score == 45
     assert result.is_ready is False
+
+
+def test_release_gate_accepts_ready_production_config():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:1.0.0",
+        replicas=3,
+        resources=create_resources(),
+    )
+
+    assert is_release_ready(config) is True
+
+
+def test_release_gate_rejects_unready_production_config():
+    config = DeploymentConfig(
+        service_name="payment-api",
+        environment="production",
+        image="payment-api:1.0.0",
+        replicas=1,
+        resources=create_resources(),
+    )
+
+    assert is_release_ready(config) is False
