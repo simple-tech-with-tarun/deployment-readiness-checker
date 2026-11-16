@@ -154,7 +154,7 @@ def test_evaluate_readiness_rejects_development_above_maximum_replicas():
     result = evaluate_readiness(config)
 
     assert result.is_ready is False
-    assert result.findings == ["Development deployments allow at most 3 replicas."]
+    assert result.findings == ["Development deployments are limited to 3 replicas."]
 
 
 def test_evaluate_readiness_rejects_staging_above_maximum_replicas():
@@ -169,7 +169,7 @@ def test_evaluate_readiness_rejects_staging_above_maximum_replicas():
     result = evaluate_readiness(config)
 
     assert result.is_ready is False
-    assert result.findings == ["Staging deployments allow at most 10 replicas."]
+    assert result.findings == ["Staging deployments are limited to 10 replicas."]
 
 
 def test_evaluate_readiness_rejects_production_above_maximum_replicas():
@@ -184,4 +184,4 @@ def test_evaluate_readiness_rejects_production_above_maximum_replicas():
     result = evaluate_readiness(config)
 
     assert result.is_ready is False
-    assert result.findings == ["Production deployments allow at most 100 replicas."]
+    assert result.findings == ["Production deployments are limited to 100 replicas."]
