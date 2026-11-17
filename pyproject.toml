@@ -16,6 +16,7 @@ deployment-readiness-checker = "deployment_readiness_checker.cli:main"
 dev = [
     "pytest",
     "ruff",
+    "build",
 ]
 
 [tool.setuptools.packages.find]
