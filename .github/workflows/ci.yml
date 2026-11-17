@@ -31,3 +31,14 @@ jobs:
           python -m ruff format --check .
           python -m ruff check .
           python -m pytest -v
+
+      - name: Build distribution packages
+        run: python -m build
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
